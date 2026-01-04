@@ -1,3 +1,5 @@
+from winreg import KEY_READ
+
 import hou
 import viewerstate.utils as su
 from hou import Vector3
@@ -23,6 +25,7 @@ class State(object):
         self.tool_edit_rect = None
 
         self.poly_guide = hou.GeometryDrawableGroup("poly_guide")
+        self.text = hou.TextDrawable(self.scene_viewer, "text")
 
     def onEnter(self, kwargs):
         """Assign the geometry to drawabled"""
@@ -38,6 +41,8 @@ class State(object):
 
         self.tool_draw_rect = DrawRect(self)
         self.tool_edit_rect = EditRect(self)
+
+        self.text.show(True)
 
     def start(self):
         if not self.pressed:
@@ -66,8 +71,9 @@ class State(object):
     def onMouseEvent(self, kwargs):
         ui_event = kwargs["ui_event"]
         self.mode = self.node.parm("mode").eval()
-        if self.mode == 0 and self.tool_draw_rect:
+        if self.mode == 0 and self.tool_draw_rect and self.tool_edit_rect:
             self.tool_draw_rect.on_draw_rect(ui_event)
+            self.tool_edit_rect.onRemoveSelectedPrim()
         elif self.mode == 1 and self.tool_edit_rect:
             self.tool_edit_rect.onEditRect(ui_event)
             self.poly_guide.show(False)
@@ -78,6 +84,34 @@ class State(object):
         """This callback is used for rendering the drawables"""
         handle = kwargs["draw_handle"]
         self.poly_guide.draw(handle)
+        # params = {
+        #     "text": "Hello",
+        #     "multi_line": True,
+        #     "translate": (0, 0, 0.0),
+        #     "highlight_mode": hou.drawableHighlightMode.MatteOverGlow,
+        #     "glow_width": 1,
+        #     "color1": hou.Color(1.0, 0.0, 0.0),
+        #     "color2": (0.0, 0.0, 0.0, 1.0),
+        # }
+        # self.text.draw(handle, params)
+
         if self.tool_edit_rect:
             self.tool_edit_rect.selected_guide.draw(handle)
             self.tool_edit_rect.selected_edge.draw(handle)
+
+    # def onKeyTransitEvent(self, kwargs):
+    #     ui_event = kwargs["ui_event"]
+    #     device = ui_event.device()
+    #     key = device.keyString()
+
+    #     if device.modifierString():
+    #         print(str(key))
+
+    def onKeyEvent(self, kwargs):
+        ui_event = kwargs["ui_event"]
+        key_pressed = ui_event.device().keyString()
+
+        # Ctrl+d > Delete key value
+        if key_pressed == "Ctrl+d":
+            if self.mode == 1 and self.tool_edit_rect:
+                self.tool_edit_rect.onDeleteRect()

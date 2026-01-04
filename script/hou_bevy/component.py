@@ -91,29 +91,33 @@ class HouRect:
 
 @dataclass
 class HouLayer:
-    mesh2d: Optional[List[HouRect]] = None
+    rect: Optional[List[HouRect]] = None
 
     @classmethod
     def new(cls) -> "HouLayer":
         return HouLayer()
 
+    def append_data(self, data: Any):
+        if isinstance(data, HouRect):
+            self.append_rect(data)
+
     def to_dict(self) -> Dict[str, Any]:
         result = {}
-        if self.mesh2d is not None:
-            result["mesh2d"] = [rect.to_dict() for rect in self.mesh2d]
+        if self.rect is not None:
+            result["rect"] = [rect.to_dict() for rect in self.rect]
         return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> HouLayer:
-        mesh2d = None
-        if "mesh2d" in data and data["mesh2d"] is not None:
-            mesh2d = [HouRect.from_dict(rect_data) for rect_data in data["mesh2d"]]
-        return cls(mesh2d=mesh2d)
+        rect = None
+        if "rect" in data and data["rect"] is not None:
+            rect = [HouRect.from_dict(rect_data) for rect_data in data["rect"]]
+        return cls(rect=rect)
 
-    def append_hou_rect(self, rect: HouRect) -> None:
-        if self.mesh2d is None:
-            self.mesh2d = []
-        self.mesh2d.append(rect)
+    def append_rect(self, rect: HouRect) -> None:
+        if self.rect is None:
+            self.rect = []
+        self.rect.append(rect)
 
 
 @dataclass
@@ -126,6 +130,23 @@ class HouData:
                 layer_name: layer.to_dict() for layer_name, layer in self.layer.items()
             }
         }
+
+    def create_layer(self, name: str):
+        """
+        Create HouLayer if not exists
+        """
+        if name not in self.layer.keys():
+            layer = HouLayer.new()
+            self.layer[name] = layer
+
+    def get_layer(self, name: str) -> HouLayer | None:
+        if name not in self.layer.keys():
+            self.create_layer(name)
+
+        return self.layer[name]
+
+    def append_data(self, layer_name: str, data: Any):
+        self.layer[layer_name].append_data(data)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> HouData:

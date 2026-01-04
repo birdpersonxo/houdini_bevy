@@ -11,16 +11,16 @@ def reorder_points(
     order = [0, 1, 2, 3]
     if first_axis == "Y":
         if p0[1] > p1[1]:
-            if p1[0] < p2[0]:
-                order = [0, 3, 2, 1]
+            if p1[0] > p2[0]:
+                order = [3, 0, 1, 2]
 
         if p0[1] < p1[1]:
             if p1[0] > p2[0]:
                 order = [2, 1, 0, 3]
     else:
         if p0[0] > p1[0]:
-            if p1[1] > p2[1]:
-                order = [1, 0, 3, 2]
+            if p1[1] < p2[1]:
+                order = [2, 3, 0, 1]
 
         elif p1[0] > p0[0]:
             if p2[1] > p1[1]:

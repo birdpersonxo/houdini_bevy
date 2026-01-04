@@ -1,4 +1,4 @@
-def reload():
+def reload_module():
     from importlib import reload
 
     print("doing reload")
