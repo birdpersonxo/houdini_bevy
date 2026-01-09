@@ -6,6 +6,37 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass
+class Int2:
+    x: int = 0
+    y: int = 0
+
+    @classmethod
+    def splat(cls, value: int) -> Int2:
+        return cls(x=value, y=value)
+
+    @classmethod
+    def new(cls, x: int, y: int) -> Int2:
+        return cls(x=x, y=y)
+
+    def to_dict(self) -> List[int]:
+        return [self.x, self.y]
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, int]) -> Int2:
+        return cls(x=data.get("x", 0), y=data.get("y", 0))
+
+    @classmethod
+    def to_list(cls, list: List[int]) -> List[Int2]:
+        if len(list) % 2 != 0:
+            raise ValueError(f"List length must be even, got {len(list)}")
+
+        result = []
+        for i in range(0, len(list), 3):
+            result.append(cls(x=list[i], y=list[i + 1]))
+        return result
+
+
+@dataclass
 class Vec2:
     x: float = 0.0
     y: float = 0.0
@@ -57,6 +88,34 @@ class Vec3:
     def from_dict(cls, data: Dict[str, float]) -> Vec3:
         return cls(x=data.get("x", 0.0), y=data.get("y", 0.0), z=data.get("z", 0.0))
 
+    @classmethod
+    def to_list(cls, list: List[float]) -> List[Vec3]:
+        if len(list) % 2 != 0:
+            raise ValueError(f"List length must be even, got {len(list)}")
+
+        result = []
+        for i in range(0, len(list), 3):
+            result.append(cls(x=list[i], y=list[i + 1], z=list[i + 2]))
+        return result
+
+
+@dataclass
+class Hou2dMesh:
+    vertices: List[Vec2] = field(default_factory=lambda: [])
+    normals: List[Vec3] = field(default_factory=lambda: [])
+    indices: List[int] = field(default_factory=lambda: [])
+    z: float = 0.0
+    id: int = 0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "vertices": [vert.to_dict() for vert in self.vertices],
+            "indices": self.indices,
+            "normals": [norm.to_dict() for norm in self.normals],
+            "z": self.z,
+            "id": self.id,
+        }
+
 
 @dataclass
 class HouRect:
@@ -92,6 +151,7 @@ class HouRect:
 @dataclass
 class HouLayer:
     rect: Optional[List[HouRect]] = None
+    mesh2d: Optional[List[Hou2dMesh]] = None
 
     @classmethod
     def new(cls) -> "HouLayer":
@@ -100,11 +160,17 @@ class HouLayer:
     def append_data(self, data: Any):
         if isinstance(data, HouRect):
             self.append_rect(data)
+        if isinstance(data, Hou2dMesh):
+            if self.mesh2d is None:
+                self.mesh2d = []
+            self.mesh2d.append(data)
 
     def to_dict(self) -> Dict[str, Any]:
         result = {}
         if self.rect is not None:
             result["rect"] = [rect.to_dict() for rect in self.rect]
+        if self.mesh2d is not None:
+            result["mesh2d"] = [mesh2d.to_dict() for mesh2d in self.mesh2d]
         return result
 
     @classmethod
